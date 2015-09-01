@@ -62,7 +62,7 @@ import org.jdesktop.core.animation.timing.Animator;
 import org.jdesktop.core.animation.timing.KeyFrames;
 import org.jdesktop.core.animation.timing.TimingTarget;
 import org.jdesktop.core.animation.timing.TimingTargetAdapter;
-import org.jdesktop.swing.animation.rendering.JPassiveRenderer;
+import org.jdesktop.swing.animation.rendering.JActiveRenderer;
 import org.jdesktop.swing.animation.rendering.JRendererFactory;
 import org.jdesktop.swing.animation.rendering.JRendererPanel;
 import org.jdesktop.swing.animation.timing.sources.SwingTimerTimingSource;
@@ -91,6 +91,7 @@ public class CircularLayoutPanel extends JComponent implements JRendererTarget<G
     private JRendererPanel rendererPanel;
     private JRenderer renderer;
     private Animator animator;
+    private boolean suspend = true;
 
     private RatioLayoutBuilder layoutBuilder;
 
@@ -110,8 +111,8 @@ public class CircularLayoutPanel extends JComponent implements JRendererTarget<G
         rendererPanel = new JRendererPanel();
         add(rendererPanel, BorderLayout.CENTER);
         rendererPanel.setBackground(Color.white);
-        renderer = new JPassiveRenderer(rendererPanel, this, new SwingTimerTimingSource(500, TimeUnit.MILLISECONDS));
-//        renderer = JRendererFactory.getDefaultRenderer(rendererPanel, this, false);
+//        renderer = new JPassiveRenderer(rendererPanel, this, new SwingTimerTimingSource(500, TimeUnit.MILLISECONDS));
+        renderer = JRendererFactory.getDefaultRenderer(rendererPanel, this, false);
         setPreferredSize(new Dimension(800, 600));
         setOpaque(true);
         setDoubleBuffered(true);
@@ -125,7 +126,7 @@ public class CircularLayoutPanel extends JComponent implements JRendererTarget<G
         chartSettings.setDithering(ChartSettings.Dithering.DISABLE);
         chartSettings.setRendering(ChartSettings.Rendering.SPEED);
         KeyFrames.Builder<Double> builder = new KeyFrames.Builder<Double>(0.0d);
-        builder.addFrames(buildKeyFrames(20));
+        builder.addFrames(buildKeyFrames(50));
         final KeyFrames<Double> frames = builder.build();
         TimingTarget tt = new TimingTargetAdapter() {
             @Override
@@ -139,7 +140,7 @@ public class CircularLayoutPanel extends JComponent implements JRendererTarget<G
                 });
             }
         };
-        animator = new Animator.Builder(renderer.getTimingSource()).setRepeatCount(Animator.INFINITE).setRepeatBehavior(Animator.RepeatBehavior.LOOP).addTarget(tt).build();
+        animator = new Animator.Builder(renderer.getTimingSource()).setDuration(5, TimeUnit.SECONDS).setRepeatCount(Animator.INFINITE).setRepeatBehavior(Animator.RepeatBehavior.LOOP).addTarget(tt).build();
         animator.start();
         animator.pause();
     }
@@ -154,10 +155,11 @@ public class CircularLayoutPanel extends JComponent implements JRendererTarget<G
     }
 
     public boolean isSuspend() {
-        return animator.isPaused();
+        return suspend;
     }
 
     public void setSuspend(boolean suspend) {
+        this.suspend = suspend;
         if (suspend) {
             animator.pause();
         } else {
@@ -360,8 +362,14 @@ public class CircularLayoutPanel extends JComponent implements JRendererTarget<G
                     }
                     if (selection != null) {
                         setCursor(new Cursor(Cursor.HAND_CURSOR));
+                        if (!suspend) {
+                            animator.pause();
+                        }
                     } else {
                         setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                        if (!suspend) {
+                            animator.resume();
+                        }
                     }
                     repaint();
                 }
@@ -380,17 +388,14 @@ public class CircularLayoutPanel extends JComponent implements JRendererTarget<G
 
     @Override
     public void mouseEntered(MouseEvent me) {
-//        suspend = true;
     }
 
     @Override
     public void mouseExited(MouseEvent me) {
-//        suspend = false;
     }
 
     @Override
     public void mouseDragged(MouseEvent me) {
-//        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -413,8 +418,14 @@ public class CircularLayoutPanel extends JComponent implements JRendererTarget<G
                     }
                     if (!hoverSelected.isEmpty() || selection != null) {
                         setCursor(new Cursor(Cursor.HAND_CURSOR));
+                        if (!suspend) {
+                            animator.pause();
+                        }
                     } else {
                         setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                        if (!suspend) {
+                            animator.resume();
+                        }
                     }
                     repaint();
                 }
@@ -425,24 +436,20 @@ public class CircularLayoutPanel extends JComponent implements JRendererTarget<G
 
     @Override
     public void componentResized(ComponentEvent ce) {
-//        throw new UnsupportedOperationException("Not supported yet.");
         rebuildShapes();
     }
 
     @Override
     public void componentMoved(ComponentEvent ce) {
-//        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
     public void componentShown(ComponentEvent ce) {
-//        throw new UnsupportedOperationException("Not supported yet.");
         rebuildShapes();
     }
 
     @Override
     public void componentHidden(ComponentEvent ce) {
-//        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     public void setTargetMargin(double margin) {

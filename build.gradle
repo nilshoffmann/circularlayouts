@@ -1,0 +1,27 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = "circularlayouts.CircularLayouts"
+
+project.ext{
+    VM_OPTS = "-Dsun.java2d.opengl=false"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.apache.xmlgraphics:batik-svggen:1.7'
+    compile 'org.apache.xmlgraphics:batik-dom:1.7'
+    compile 'net.java.timingframework:timingframework-swing:7.2.0'
+    testCompile 'junit:junit:4.11'
+}
+
+startScripts {
+    doLast {
+        def JVM_OPTS = "DEFAULT_JVM_OPTS=\"${project.ext.VM_OPTS}\""
+        unixScript.text = unixScript.text.replace('DEFAULT_JVM_OPTS=""', JVM_OPTS)
+        windowsScript.text = windowsScript.text.replace('DEFAULT_JVM_OPTS=', JVM_OPTS)
+    }
+}
